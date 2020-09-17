@@ -273,8 +273,8 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
               EXECUTE IMMEDIATE ejecutar_pkg;
             EXCEPTION
               WHEN OTHERS THEN
-                RAISE_APPLICATION_ERROR(-20000,'ERROR AL EJECUTAR EL PKG '||ejecutar_pkg);
-                --DBMS_OUTPUT.PUT_LINE('ERROR AL EJECUTAR EL PKG '||ejecutar_pkg);
+                --RAISE_APPLICATION_ERROR(-20000,'ERROR AL EJECUTAR EL PKG '||ejecutar_pkg);
+                DBMS_OUTPUT.PUT_LINE(SQLERRM || ' - ' || SQLERRM || ' - ERROR AL EJECUTAR EL PKG ' || ejecutar_pkg);
             END;
           END IF;
         EXCEPTION
