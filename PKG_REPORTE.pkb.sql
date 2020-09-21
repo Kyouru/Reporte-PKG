@@ -294,7 +294,8 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
         Objeto      : PRO_REG_DATOS_TMP_K
         Responsable : Kenji Jhoncon
         Fecha       : 21/09/2020
-        Objetivo    : Ejecutar funcion de pkg antes de registrar los datos del reporte temporal
+        Objetivo    : Registrar datos en tabla temporal para la generacion de un determinado reporte.
+        +Adicional  : Ejecutar funcion de pkg antes de registrar los datos del reporte temporal
     *******************************************************/                
     PROCEDURE PRO_REG_DATOS_TMP_K(P_CODREPORTE  REPORTE.CODREPORTE%TYPE,                                   
                                 P_FEC_EXACTA  DATE DEFAULT NULL, 
@@ -328,7 +329,7 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
             EXCEPTION
               WHEN OTHERS THEN
                 --RAISE_APPLICATION_ERROR(-20000,'ERROR AL EJECUTAR EL PKG '||ejecutar_pkg);
-                DBMS_OUTPUT.PUT_LINE(SQLERRM || ' - ' || SQLERRM || ' - ERROR AL EJECUTAR LA FUNCION ' || ejecutar_pkg);
+                DBMS_OUTPUT.PUT_LINE(SQLERRM || ' - ' || SQLERRM || ' - ERROR AL EJECUTAR EL PROCEDIMIENTO ' || ejecutar_pkg);
             END;
           END IF;
         EXCEPTION

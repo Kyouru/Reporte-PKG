@@ -3,7 +3,11 @@ alter table reporte add PKGREPORTE varchar(300);
 ALTER TABLE SISGODBA.TMP_REPORTENUEVO MODIFY (CAMPO1 varchar2(3000));
 
 
-/*******************************************************/
+/*******************************************************
+    Se Clono PKG_REPORTE.PRO_REG_DATOS_TMP y se agrego las siguientes lineas
+    Nuevo Procedimiento PKG_REPORTE.PRO_REG_DATOS_TMP_K
+********************************************************/
+
     ejecutar_pkg VARCHAR2(300);
 
     --BEGIN  
