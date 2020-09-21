@@ -1,28 +1,32 @@
 
-alter table reporte drop column PKGREPORTE;
 alter table reporte add PKGREPORTE varchar(300);
+ALTER TABLE SISGODBA.TMP_REPORTENUEVO MODIFY (CAMPO1 varchar2(3000));
 
-DECLARE
-	ejecutar_pkg VARCHAR2(300);
 
-BEGIN
-    BEGIN
-        SELECT PKGREPORTE
-        INTO ejecutar_pkg
-        FROM REPORTE r
-        WHERE r.codreporte = P_CODREPORTE;
+/*******************************************************/
+    ejecutar_pkg VARCHAR2(300);
 
-        IF ejecutar_pkg <> '' THEN
-          DBMS_OUTPUT.PUT_LINE(ejecutar_pkg);
-          BEGIN
-            EXECUTE IMMEDIATE ejecutar_pkg;
-          EXCEPTION
-            WHEN OTHERS THEN
-                DBMS_OUTPUT.PUT_LINE(SQLERRM || ' - ' || SQLERRM || ' - ERROR AL EJECUTAR EL PKG ' || ejecutar_pkg);
-          END;
-        END IF;
-    EXCEPTION
-        WHEN OTHERS THEN
+    --BEGIN  
+
+        EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_REPORTENUEVO'; --DELETE FROM TMP_REPORTENUEVO;
+        
+        BEGIN
+          SELECT PKGREPORTE
+          INTO ejecutar_pkg
+          FROM REPORTE r
+          WHERE r.codreporte = P_CODREPORTE;
+
+          IF ejecutar_pkg IS NOT NULL THEN
+            ejecutar_pkg := REPLACE(REPLACE(REPLACE(ejecutar_pkg, 'P_FEC_EXACTA', TO_CHAR(P_FEC_EXACTA, 'DD/MM/RR')), 'P_FEC_INICIO', TO_CHAR(P_FEC_INICIO, 'DD/MM/RR')), 'P_FEC_FINAL', TO_CHAR(P_FEC_FINAL, 'DD/MM/RR'));
+            BEGIN
+              EXECUTE IMMEDIATE ejecutar_pkg;
+            EXCEPTION
+              WHEN OTHERS THEN
+                --RAISE_APPLICATION_ERROR(-20000,'ERROR AL EJECUTAR EL PKG '||ejecutar_pkg);
+                DBMS_OUTPUT.PUT_LINE(SQLERRM || ' - ' || SQLERRM || ' - ERROR AL EJECUTAR LA FUNCION ' || ejecutar_pkg);
+            END;
+          END IF;
+        EXCEPTION
+          WHEN OTHERS THEN
             NULL;
-    END;
-END;
+        END;

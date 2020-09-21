@@ -253,35 +253,12 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
                 
     vSentSelect REPORTE.SENTSELECT%TYPE;
     vCampos     REPORTE.SENTSELECT%TYPE; 
-    nCantCampos NUMBER;
-
-    ejecutar_pkg VARCHAR2(300);
+    nCantCampos NUMBER;   
 
     BEGIN  
 
-        TRUNCATE TABLE TMP_REPORTENUEVO; --DELETE FROM TMP_REPORTENUEVO;
-        
-        BEGIN
-          SELECT PKGREPORTE
-          INTO ejecutar_pkg
-          FROM REPORTE r
-          WHERE r.codreporte = P_CODREPORTE;
-
-          IF ejecutar_pkg <> '' THEN
-            DBMS_OUTPUT.PUT_LINE(ejecutar_pkg);
-            BEGIN
-              EXECUTE IMMEDIATE ejecutar_pkg;
-            EXCEPTION
-              WHEN OTHERS THEN
-                --RAISE_APPLICATION_ERROR(-20000,'ERROR AL EJECUTAR EL PKG '||ejecutar_pkg);
-                DBMS_OUTPUT.PUT_LINE(SQLERRM || ' - ' || SQLERRM || ' - ERROR AL EJECUTAR EL PKG ' || ejecutar_pkg);
-            END;
-          END IF;
-        EXCEPTION
-          WHEN OTHERS THEN
-            NULL;
-        END;
-
+        DELETE FROM TMP_REPORTENUEVO;
+           
         vCampos:='INSERT INTO TMP_REPORTENUEVO(';  
         nCantCampos:=PKG_REPORTE.FUN_CANT_CAMPOS(P_CODREPORTE);
 
@@ -312,6 +289,85 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
         RAISE_APPLICATION_ERROR(-21000,'Error en procedimiento PKG_REPORTE.PRO_REG_DATOS_TMP. '||SQLERRM);
             
     END PRO_REG_DATOS_TMP;
+
+    /*******************************************************
+        Objeto      : PRO_REG_DATOS_TMP_K
+        Responsable : Kenji Jhoncon
+        Fecha       : 21/09/2020
+        Objetivo    : Ejecutar funcion de pkg antes de registrar los datos del reporte temporal
+    *******************************************************/                
+    PROCEDURE PRO_REG_DATOS_TMP_K(P_CODREPORTE  REPORTE.CODREPORTE%TYPE,                                   
+                                P_FEC_EXACTA  DATE DEFAULT NULL, 
+                                P_FEC_INICIO  DATE DEFAULT NULL, 
+                                P_FEC_FINAL   DATE DEFAULT NULL, 
+                                P_COD_ESTADO  SYST900.TBLCODTAB%TYPE DEFAULT NULL) IS
+               
+    PRAGMA AUTONOMOUS_TRANSACTION;
+                
+    vSentSelect REPORTE.SENTSELECT%TYPE;
+    vCampos     REPORTE.SENTSELECT%TYPE; 
+    nCantCampos NUMBER;
+
+        
+    ejecutar_pkg VARCHAR2(300);
+
+    BEGIN  
+
+        EXECUTE IMMEDIATE 'TRUNCATE TABLE TMP_REPORTENUEVO'; --DELETE FROM TMP_REPORTENUEVO;
+        
+        BEGIN
+          SELECT PKGREPORTE
+          INTO ejecutar_pkg
+          FROM REPORTE r
+          WHERE r.codreporte = P_CODREPORTE;
+
+          IF ejecutar_pkg IS NOT NULL THEN
+            ejecutar_pkg := REPLACE(REPLACE(REPLACE(ejecutar_pkg, 'P_FEC_EXACTA', TO_CHAR(P_FEC_EXACTA, 'DD/MM/RR')), 'P_FEC_INICIO', TO_CHAR(P_FEC_INICIO, 'DD/MM/RR')), 'P_FEC_FINAL', TO_CHAR(P_FEC_FINAL, 'DD/MM/RR'));
+            BEGIN
+              EXECUTE IMMEDIATE ejecutar_pkg;
+            EXCEPTION
+              WHEN OTHERS THEN
+                --RAISE_APPLICATION_ERROR(-20000,'ERROR AL EJECUTAR EL PKG '||ejecutar_pkg);
+                DBMS_OUTPUT.PUT_LINE(SQLERRM || ' - ' || SQLERRM || ' - ERROR AL EJECUTAR LA FUNCION ' || ejecutar_pkg);
+            END;
+          END IF;
+        EXCEPTION
+          WHEN OTHERS THEN
+            NULL;
+        END;
+
+        /*******************************************************/
+
+        vCampos:='INSERT INTO TMP_REPORTENUEVO(';  
+        nCantCampos:=PKG_REPORTE.FUN_CANT_CAMPOS(P_CODREPORTE);
+
+        FOR X IN  1..nCantCampos LOOP
+
+            IF nCantCampos = X THEN 
+             vCampos:=vCampos||'CAMPO'||TO_CHAR(X);
+            ELSE
+             vCampos:=vCampos||'CAMPO'||TO_CHAR(X)||', ';
+            END IF;
+
+        END LOOP; 
+        
+        vCampos:=vCampos||') ' ;
+
+        vSentSelect:=FUN_SENT_SELECT_FINAL(P_CODREPORTE,                       
+                                           P_FEC_EXACTA,
+                                           P_FEC_INICIO,
+                                           P_FEC_FINAL,
+                                           P_COD_ESTADO);
+                                                  
+        EXECUTE IMMEDIATE vCampos||vSentSelect;
+
+        COMMIT;
+      
+    EXCEPTION 
+      WHEN OTHERS THEN  
+        RAISE_APPLICATION_ERROR(-21000,'Error en procedimiento PKG_REPORTE.PRO_REG_DATOS_TMP. '||SQLERRM);
+            
+    END PRO_REG_DATOS_TMP_K;
   
     /****************************************************************************************************
     Objeto      : FUN_COD_TIPDATOCOL
@@ -543,99 +599,6 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
     EXCEPTION WHEN OTHERS THEN
         Raise_Application_Error(-20000,'Error en PROCEDURE P_GEN_EXCEL:'||sqlerrm);
     END P_GEN_EXCEL;
---
-PROCEDURE P_GENERA_REPORTE_CSV ( NOMBRETABLA      IN  VARCHAR2,
-                                 NOMBREREPORTE IN VARCHAR2,
-                                 DIRECTORIO      IN  VARCHAR2,
-                                 LIMITE IN NUMBER,
-                                 NOMBRESALIDA OUT VARCHAR2) IS 
-
-    lf_arch            UTL_FILE.FILE_TYPE;
-    TYPE dato_concatenado_rec IS RECORD (
-        dato_concatenado                  VARCHAR2 (5000)
-    );
-    TYPE dato_concatenado_aat IS TABLE OF dato_concatenado_rec
-      INDEX BY PLS_INTEGER;
-    lista_dato_concatenado      dato_concatenado_aat;
-    filacursor                  SYS_REFCURSOR;
-  
-    vStrQ              VARCHAR2(10000);
-    p_ruta_out         VARCHAR2(200):=DIRECTORIO;
-	lv_Line            VARCHAR2(8000) := Null;
-	
-    cNombArch          VARCHAR2(100):= TRIM(NOMBREREPORTE)||'_'||
-                                     TO_CHAR(SYSDATE,'YYYYMMDD')||'_'||
-                                     TO_CHAR(SYSDATE,'HH24MISS') || '.csv';
-  
-BEGIN
-
-    lf_arch := UTL_FILE.FOPEN(p_ruta_out, cNombArch, 'W', 32000);
-      
-    --lv_Line         := '';
-    vStrQ           := 'SELECT ';
-    
-        lv_Line:=NULL;
-    --Inicio nombre columnas
-    FOR X IN (
-                SELECT COLUMN_NAME AS NOMBRE_COLUMNA, 
-                       DATA_TYPE AS TIPO_COLUMNA 
-                  FROM ALL_TAB_COLS where table_name = NOMBRETABLA
-                )
-    LOOP
-
-        lv_Line := lv_Line || X.NOMBRE_COLUMNA || ',';
-        
-        ----------------------------------
-        --Armar SELECT en un VARCHAR2
-        --Condiciones por colunma >> Formato 
-        ----------------------------------
-        CASE 
-            --Caso columna tipo fecha
-            --vStrQ := vStrQ || '''<td><font color="blue" face="Arial" size=3>''||TO_CHAR(' || X.NOMBRE_COLUMNA || ',''DD/MM/YYYY'')||''</font></td>''||';
-            WHEN X.TIPO_COLUMNA = 'DATE' THEN
-                --Formato Fecha (DD/MM/YYYY)
-                vStrQ := vStrQ || '''"''||TO_CHAR(' || X.NOMBRE_COLUMNA || ',''YYYY-MM-DD'')||''",''||';
-                
-            --WHEN X.NOMBRE_COLUMNA = 'NRO' THEN
-                --vStrQ := vStrQ || '''"''||TO_CHAR(' || X.NOMBRE_COLUMNA || ',''9,999,990.99'')||''",''||';
-            ELSE
-                vStrQ := vStrQ || '''"''||' || X.NOMBRE_COLUMNA|| '||''",''||';
-        END CASE;
-        ----------------------------------
-        ----------------------------------
-        
-    END LOOP;
-    
-    --DBMS_OUTPUT.PUT_LINE(lv_Line);
-    UTL_FILE.PUT_LINE(lf_arch, lv_Line); 
-    lv_Line := NULL;
-    
-    vStrQ := LPAD(vStrQ, LENGTH(vStrQ) - 2) || ' AS FILACONCATENADA FROM ' || UPPER(NOMBRETABLA);
-   --  vStrQ := vStrQ || ' WHERE ROWNUM < 1000';
-    --Fin nombre columnas
-    
-    --Inicio Filas datos
-    OPEN filacursor FOR vStrQ;
-    IF LIMITE > 0 THEN
-        FETCH filacursor BULK COLLECT INTO lista_dato_concatenado LIMIT LIMITE;
-     ELSE
-        FETCH filacursor BULK COLLECT INTO lista_dato_concatenado;
-     END IF;
-    CLOSE filacursor;
-    FOR indx IN 1 .. lista_dato_concatenado.COUNT
-    LOOP
-        --IF MOD(indx, 20) = 0 THEN
-       --     UTL_FILE.FFLUSH(lf_arch);
-        --END IF;
-        lv_Line := lista_dato_concatenado(indx).dato_concatenado;
-        --DBMS_OUTPUT.PUT_LINE(lv_Line);
-        UTL_FILE.PUT_LINE(lf_arch, lv_Line);
-        lv_Line := NULL;
-    END LOOP;
-    
-	UTL_FILE.Fclose(lf_arch);
-	NOMBRESALIDA := cNombArch;
-END P_GENERA_REPORTE_CSV;
 --     
 END PKG_REPORTE;
 /
