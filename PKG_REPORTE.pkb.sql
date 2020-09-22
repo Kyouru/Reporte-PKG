@@ -323,7 +323,7 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
           WHERE r.codreporte = P_CODREPORTE;
 
           IF ejecutar_pkg IS NOT NULL THEN
-            ejecutar_pkg := REPLACE(REPLACE(REPLACE(ejecutar_pkg, 'P_FEC_EXACTA', TO_CHAR(P_FEC_EXACTA, 'DD/MM/RR')), 'P_FEC_INICIO', TO_CHAR(P_FEC_INICIO, 'DD/MM/RR')), 'P_FEC_FINAL', TO_CHAR(P_FEC_FINAL, 'DD/MM/RR'));
+            ejecutar_pkg := 'BEGIN ' || REPLACE(REPLACE(REPLACE(REPLACE(ejecutar_pkg, 'P_FEC_EXACTA', '''' || TO_CHAR(P_FEC_EXACTA, 'DD/MM/RR') || ''''), 'P_FEC_INICIO', '''' || TO_CHAR(P_FEC_INICIO, 'DD/MM/RR') || ''''), 'P_FEC_FINAL', '''' || TO_CHAR(P_FEC_FINAL, 'DD/MM/RR') || ''''), 'P_COD_ESTADO', '''' || 'P_COD_ESTADO' || '''') || ' END;';
             BEGIN
               EXECUTE IMMEDIATE ejecutar_pkg;
             EXCEPTION

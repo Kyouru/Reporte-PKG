@@ -1,8 +1,4 @@
 
-alter table reporte add PKGREPORTE varchar(300);
-ALTER TABLE SISGODBA.TMP_REPORTENUEVO MODIFY (CAMPO1 varchar2(3000));
-
-
 /*******************************************************
     Se Clono PKG_REPORTE.PRO_REG_DATOS_TMP y se agrego las siguientes lineas
     Nuevo Procedimiento PKG_REPORTE.PRO_REG_DATOS_TMP_K
@@ -21,7 +17,7 @@ ALTER TABLE SISGODBA.TMP_REPORTENUEVO MODIFY (CAMPO1 varchar2(3000));
           WHERE r.codreporte = P_CODREPORTE;
 
           IF ejecutar_pkg IS NOT NULL THEN
-            ejecutar_pkg := REPLACE(REPLACE(REPLACE(ejecutar_pkg, 'P_FEC_EXACTA', TO_CHAR(P_FEC_EXACTA, 'DD/MM/RR')), 'P_FEC_INICIO', TO_CHAR(P_FEC_INICIO, 'DD/MM/RR')), 'P_FEC_FINAL', TO_CHAR(P_FEC_FINAL, 'DD/MM/RR'));
+            ejecutar_pkg := "BEGIN " || REPLACE(REPLACE(REPLACE(REPLACE(ejecutar_pkg, 'P_FEC_EXACTA', '''' || TO_CHAR(P_FEC_EXACTA, 'DD/MM/RR') || ''''), 'P_FEC_INICIO', '''' || TO_CHAR(P_FEC_INICIO, 'DD/MM/RR') || ''''), 'P_FEC_FINAL', '''' || TO_CHAR(P_FEC_FINAL, 'DD/MM/RR') || ''''), 'P_COD_ESTADO', '''' || 'P_COD_ESTADO' || '''') || ' END;';
             BEGIN
               EXECUTE IMMEDIATE ejecutar_pkg;
             EXCEPTION
