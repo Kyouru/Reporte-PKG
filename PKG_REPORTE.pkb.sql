@@ -242,62 +242,15 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
     Responsable : Luis Chileno
     Fecha       : 09/04/2018
     Objetivo: Registrar datos en tabla temporal para la generacion de un determinado reporte.
-    *****************************************************************************************************/               
-    PROCEDURE PRO_REG_DATOS_TMP(P_CODREPORTE  REPORTE.CODREPORTE%TYPE,                                   
-                                P_FEC_EXACTA  DATE DEFAULT NULL, 
-                                P_FEC_INICIO  DATE DEFAULT NULL, 
-                                P_FEC_FINAL   DATE DEFAULT NULL, 
-                                P_COD_ESTADO  SYST900.TBLCODTAB%TYPE DEFAULT NULL) IS
-               
-    PRAGMA AUTONOMOUS_TRANSACTION;
-                
-    vSentSelect REPORTE.SENTSELECT%TYPE;
-    vCampos     REPORTE.SENTSELECT%TYPE; 
-    nCantCampos NUMBER;   
-
-    BEGIN  
-
-        DELETE FROM TMP_REPORTENUEVO;
-           
-        vCampos:='INSERT INTO TMP_REPORTENUEVO(';  
-        nCantCampos:=PKG_REPORTE.FUN_CANT_CAMPOS(P_CODREPORTE);
-
-        FOR X IN  1..nCantCampos LOOP
-
-            IF nCantCampos = X THEN 
-             vCampos:=vCampos||'CAMPO'||TO_CHAR(X);
-            ELSE
-             vCampos:=vCampos||'CAMPO'||TO_CHAR(X)||', ';
-            END IF;
-
-        END LOOP; 
-        
-        vCampos:=vCampos||') ' ;
-
-        vSentSelect:=FUN_SENT_SELECT_FINAL(P_CODREPORTE,                       
-                                           P_FEC_EXACTA,
-                                           P_FEC_INICIO,
-                                           P_FEC_FINAL,
-                                           P_COD_ESTADO);
-                                                  
-        EXECUTE IMMEDIATE vCampos||vSentSelect;
-
-        COMMIT;
-      
-    EXCEPTION 
-      WHEN OTHERS THEN  
-        RAISE_APPLICATION_ERROR(-21000,'Error en procedimiento PKG_REPORTE.PRO_REG_DATOS_TMP. '||SQLERRM);
-            
-    END PRO_REG_DATOS_TMP;
-
+    *****************************************************************************************************/
     /*******************************************************
-        Objeto      : PRO_REG_DATOS_TMP_K
+        Objeto      : PRO_REG_DATOS_TMP
         Responsable : Kenji Jhoncon
         Fecha       : 21/09/2020
         Objetivo    : Registrar datos en tabla temporal para la generacion de un determinado reporte.
         +Adicional  : Ejecutar funcion de pkg antes de registrar los datos del reporte temporal
     *******************************************************/                
-    PROCEDURE PRO_REG_DATOS_TMP_K(P_CODREPORTE  REPORTE.CODREPORTE%TYPE,                                   
+    PROCEDURE PRO_REG_DATOS_TMP(P_CODREPORTE  REPORTE.CODREPORTE%TYPE,                                   
                                 P_FEC_EXACTA  DATE DEFAULT NULL, 
                                 P_FEC_INICIO  DATE DEFAULT NULL, 
                                 P_FEC_FINAL   DATE DEFAULT NULL, 
@@ -368,7 +321,7 @@ CREATE OR REPLACE PACKAGE BODY SISGODBA.PKG_REPORTE IS
       WHEN OTHERS THEN  
         RAISE_APPLICATION_ERROR(-21000,'Error en procedimiento PKG_REPORTE.PRO_REG_DATOS_TMP. '||SQLERRM);
             
-    END PRO_REG_DATOS_TMP_K;
+    END PRO_REG_DATOS_TMP;
   
     /****************************************************************************************************
     Objeto      : FUN_COD_TIPDATOCOL

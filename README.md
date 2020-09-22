@@ -4,7 +4,7 @@
 ***Agregar Columna PKGREPORTE a la tabla Reporte***
 ALTER TABLE REPORTE ADD PKGREPORTE VARCHAR(3000);
 
-***Modificar Tamaño de CAMPO1 de la tabla TMP_REPORTE_NUEVO (Concatenado del Anexo6 tiene +800 caracteres por celda)***
+***Modificar Tamaño de CAMPO1 de la tabla TMP_REPORTENUEVO (Concatenado del Anexo6 tiene +800 caracteres por celda)***
 ALTER TABLE SISGODBA.TMP_REPORTENUEVO MODIFY (CAMPO1 varchar2(3000));
 
 ***Como usar campo PKGREPORTE***
@@ -18,3 +18,9 @@ Parametros provenientes del Oracle Forms:
 	P_FEC_INICIO
 	P_FEC_FINAL
 	P_COD_ESTADO
+
+**Ejemplo Rellenar TMP_REPORTENUEVO**
+
+	BEGIN
+		PKG_REPORTE.PRO_REG_DATOS_TMP(200, '29/02/2020');
+	END;
